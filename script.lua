@@ -3,12 +3,8 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local localPlayer = Players.LocalPlayer
-local workspace = game:GetService("Workspace")
-local maps = {"Bank 2", "Bio Lab", "Factory", "Hospital 3", "Hotel 2", "House 2", "Mansion 2", "Mil-Base", "Office 3", "Police Station", "Research Facility"}
 
 local highlights = {}
-local gunDropParts = {}
 
 local localplayer = Players.LocalPlayer
 local shootOffset = 2.8
@@ -163,119 +159,100 @@ killAllBtn.MouseButton1Click:Connect(function()
 	knife.Stab:FireServer(unpack(args))
 end)
 
+-- 🔫 Grab Gun Button (using firetouchinterest instead of teleport)
 grabGunBtn.MouseButton1Click:Connect(function()
-    local hrp = getHRP(localplayer)
-    if not hrp then return end
-
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj:IsA("Tool") and obj.Name == "GunDrop" and obj:FindFirstChild("Handle") then
-            local originalPos = hrp.CFrame
-
-            -- Teleport to gun handle
-            hrp.CFrame = obj.Handle.CFrame + Vector3.new(0, 3, 0)  -- a bit above the gun handle
-
-            task.wait(0.1)  -- small wait to ensure position update
-
-            -- Fire touch events to grab
-            firetouchinterest(obj.Handle, hrp, 0)
-            task.wait(0.1)
-            firetouchinterest(obj.Handle, hrp, 1)
-
-            task.wait(0.1)  -- wait for pickup to register
-
-            -- Teleport back
-            hrp.CFrame = originalPos
-            break  -- exit after grabbing the first gun
-        end
-    end
+	for _, obj in pairs(workspace:GetChildren()) do
+		if obj:IsA("Tool") and obj.Name == "GunDrop" and obj:FindFirstChild("Handle") then
+			local hrp = getHRP(localplayer)
+			if hrp then
+				firetouchinterest(obj.Handle, hrp, 0)
+				task.wait(0.1)
+				firetouchinterest(obj.Handle, hrp, 1)
+			end
+		end
+	end
 end)
 
-local function addESP(target, color)
+local function addESP(target)
 	if not target or target:FindFirstChild("ESP_Highlight") then return end
 	local highlight = Instance.new("Highlight")
 	highlight.Name = "ESP_Highlight"
 	highlight.FillTransparency = 0.5
 	highlight.OutlineTransparency = 1
 	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	highlight.FillColor = color
 	highlight.Adornee = target
 	highlight.Parent = target
 	highlights[target] = highlight
 	return highlight
 end
 
-local function getRole(plr)
-	if not plr.Character then return "Innocent" end
-	if (plr.Backpack and plr.Backpack:FindFirstChild("Knife")) or (plr.Character and plr.Character:FindFirstChild("Knife")) then
-		return "Murderer"
+local function removeAllESP()
+	for target, highlight in pairs(highlights) do
+		if highlight and highlight.Parent then
+			highlight:Destroy()
+		end
+		highlights[target] = nil
 	end
-	if (plr.Backpack and plr.Backpack:FindFirstChild("Gun")) or (plr.Character and plr.Character:FindFirstChild("Gun")) then
-		return "Sheriff"
+end
+
+local function findMurderer()
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if (plr.Backpack and plr.Backpack:FindFirstChild("Knife")) or (plr.Character and plr.Character:FindFirstChild("Knife")) then
+			return plr
+		end
 	end
-	return "Innocent"
+	return nil
+end
+
+local function findSheriff()
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if (plr.Backpack and plr.Backpack:FindFirstChild("Gun")) or (plr.Character and plr.Character:FindFirstChild("Gun")) then
+			if plr ~= findMurderer() then
+				return plr
+			end
+		end
+	end
+	return nil
 end
 
 local function updateESP()
+	local murderer = findMurderer()
+	local sheriff = findSheriff()
+
 	for _, plr in ipairs(Players:GetPlayers()) do
 		if plr.Character then
-			local role = getRole(plr)
-			local color
-			if role == "Murderer" then
-				color = Color3.fromRGB(255, 0, 0)
-			elseif role == "Sheriff" then
-				color = Color3.fromRGB(0, 0, 255)
-			else
-				color = Color3.fromRGB(0, 255, 0)
+			local highlight = highlights[plr.Character] or addESP(plr.Character)
+			if not highlight then
+				continue
 			end
-			addESP(plr.Character, color)
+
+			if plr == murderer then
+				highlight.FillColor = Color3.fromRGB(255, 0, 0) -- Red for murderer
+			elseif plr == sheriff then
+				highlight.FillColor = Color3.fromRGB(0, 0, 255) -- Blue for sheriff
+			else
+				highlight.FillColor = Color3.fromRGB(0, 255, 0) -- Green for innocent
+			end
 		end
 	end
 
-	for _, mapName in ipairs(maps) do
-		local mapFolder = workspace:FindFirstChild(mapName)
-		if mapFolder then
-			local gunDrop = mapFolder:FindFirstChild("GunDrop")
-			if gunDrop and gunDrop:IsA("BasePart") then
-				addESP(gunDrop, Color3.fromRGB(150, 0, 255))
-			end
+	local drop = workspace:FindFirstChild("GunDrop")
+	if drop and drop:IsA("Tool") and drop:FindFirstChild("Handle") then
+		local highlight = highlights[drop] or addESP(drop)
+		if highlight then
+			highlight.FillColor = Color3.fromRGB(150, 0, 255) -- Purple
 		end
 	end
+end
+
+while true do
+	pcall(updateESP)
+	task.wait(0.5)
 end
 
 Players.PlayerRemoving:Connect(function(plr)
 	if plr.Character and highlights[plr.Character] then
 		highlights[plr.Character]:Destroy()
 		highlights[plr.Character] = nil
-	end
-end)
-
-task.spawn(function()
-	while true do
-		pcall(updateESP)
-		task.wait(0.5)
-	end
-end)
-
--- Assuming you have a TextButton called grabGunBtn
-grabGunBtn.MouseButton1Click:Connect(function()
-	local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not hrp then return end
-
-	for _, mapName in ipairs(maps) do
-		local mapFolder = workspace:FindFirstChild(mapName)
-		if mapFolder then
-			local gunDrop = mapFolder:FindFirstChild("GunDrop")
-			if gunDrop and gunDrop:IsA("BasePart") then
-				local originalCFrame = hrp.CFrame
-				hrp.CFrame = gunDrop.CFrame + Vector3.new(0, 3, 0)
-				task.wait(0.1)
-				firetouchinterest(gunDrop, hrp, 0)
-				task.wait(0.1)
-				firetouchinterest(gunDrop, hrp, 1)
-				task.wait(0.1)
-				hrp.CFrame = originalCFrame
-				break
-			end
-		end
 	end
 end)
