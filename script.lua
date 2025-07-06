@@ -5,7 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
-local maps = {"Bank 2", "Bio Lab", "Factory", "Hospital 3", "Hotel 2", "House 2", "Mansion 2", "Mil-Base", "Office 3", "Police Station", "Research Facility", "Workplace"}
+local maps = {"Bank 2", "Bio Lab", "Factory", "Hospital 3", "Hotel 2", "House 2", "Mansion 2", "Mil-Base", "Office 3", "Police Station", "Research Facility"}
 
 local highlights = {}
 local gunDropParts = {}
@@ -232,28 +232,12 @@ local function updateESP()
 	end
 
 	for _, mapName in ipairs(maps) do
-	local mapFolder = workspace:FindFirstChild(mapName)
-	if mapFolder then
-		local gunDrop = mapFolder:FindFirstChild("GunDrop")
-		if gunDrop and gunDrop:IsA("BasePart") and not gunDrop:FindFirstChild("GunESP") then
-			-- Create BillboardGui
-			local billboard = Instance.new("BillboardGui")
-			billboard.Name = "GunESP"
-			billboard.Adornee = gunDrop
-			billboard.Size = UDim2.new(0, 100, 0, 40)
-			billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-			billboard.AlwaysOnTop = true
-			billboard.Parent = gunDrop
-
-			-- Create TextLabel
-			local label = Instance.new("TextLabel")
-			label.Size = UDim2.new(1, 0, 1, 0)
-			label.BackgroundTransparency = 1
-			label.Text = "🔫 Gun"
-			label.TextColor3 = Color3.fromRGB(170, 0, 255)
-			label.TextScaled = true
-			label.Font = Enum.Font.GothamBold
-			label.Parent = billboard
+		local mapFolder = workspace:FindFirstChild(mapName)
+		if mapFolder then
+			local gunDrop = mapFolder:FindFirstChild("GunDrop")
+			if gunDrop and gunDrop:IsA("BasePart") then
+				addESP(gunDrop, Color3.fromRGB(150, 0, 255))
+			end
 		end
 	end
 end
@@ -272,30 +256,26 @@ task.spawn(function()
 	end
 end)
 
+-- Assuming you have a TextButton called grabGunBtn
 grabGunBtn.MouseButton1Click:Connect(function()
-    local hrp = getHRP(localplayer)
-    if not hrp then return end
+	local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
 
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Tool") and obj.Name == "GunDrop" and obj:FindFirstChild("Handle") then
-            local originalCFrame = hrp.CFrame
-            local handle = obj.Handle
-
-            -- Teleport to gun
-            hrp.CFrame = handle.CFrame + Vector3.new(0, 3, 0)
-            task.wait(0.1)
-
-            if typeof(firetouchinterest) == "function" then
-                firetouchinterest(handle, hrp, 0)
-                task.wait(0.1)
-                firetouchinterest(handle, hrp, 1)
-            else
-                warn("firetouchinterest is not available.")
-            end
-
-            task.wait(0.1)
-            hrp.CFrame = originalCFrame
-            break
-        end
-    end
+	for _, mapName in ipairs(maps) do
+		local mapFolder = workspace:FindFirstChild(mapName)
+		if mapFolder then
+			local gunDrop = mapFolder:FindFirstChild("GunDrop")
+			if gunDrop and gunDrop:IsA("BasePart") then
+				local originalCFrame = hrp.CFrame
+				hrp.CFrame = gunDrop.CFrame + Vector3.new(0, 3, 0)
+				task.wait(0.1)
+				firetouchinterest(gunDrop, hrp, 0)
+				task.wait(0.1)
+				firetouchinterest(gunDrop, hrp, 1)
+				task.wait(0.1)
+				hrp.CFrame = originalCFrame
+				break
+			end
+		end
+	end
 end)
