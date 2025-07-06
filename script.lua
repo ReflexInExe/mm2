@@ -7,9 +7,8 @@ local localPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local maps = {"Bank 2", "Bio Lab", "Factory", "Hospital 3", "Hotel 2", "House 2", "Mansion 2", "Mil-Base", "Office 3", "Police Station", "Research Facility", "Workplace"}
 
-local highlights = {}
-local gunDropParts = {}
-local gunESPInstances = {} -- For gun ESP objects
+local highlights = {} -- Player highlights
+local gunESPInstances = {} -- Gun ESP objects
 local MAX_DISTANCE = 2000
 
 local shootOffset = 2.8
@@ -174,9 +173,9 @@ killAllBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Improved addESP function with distance check
+-- Improved addESP function with proper parenting
 local function addESP(target, color)
-    if not target or not target:IsDescendantOf(workspace) then return end
+    if not target or not target.Parent then return end
     
     -- Remove old highlight if exists
     if highlights[target] then
@@ -184,69 +183,84 @@ local function addESP(target, color)
         highlights[target] = nil
     end
     
+    -- Create new highlight
     local highlight = Instance.new("Highlight")
     highlight.Name = "ESP_Highlight"
+    highlight.FillColor = color
+    highlight.OutlineColor = Color3.new(0,0,0)
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0
     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    highlight.FillColor = color
-    highlight.OutlineColor = Color3.new(0,0,0)
     highlight.Adornee = target
     highlight.Parent = target
-    highlight.MaxDistance = MAX_DISTANCE
-    
-    -- Add distance tracking
-    local function updateVisibility()
-        if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = localPlayer.Character.HumanoidRootPart
-            if target:IsDescendantOf(workspace) and target:FindFirstChild("HumanoidRootPart") then
-                local distance = (hrp.Position - target.HumanoidRootPart.Position).Magnitude
-                highlight.Enabled = distance <= MAX_DISTANCE
-            end
-        end
-    end
-    
-    -- Initial update
-    updateVisibility()
-    
-    -- Create a loop to update visibility
-    local conn
-    conn = game:GetService("RunService").Heartbeat:Connect(function()
-        if not target or not target:IsDescendantOf(workspace) then
-            conn:Disconnect()
-            return
-        end
-        updateVisibility()
-    end)
+    highlight.Enabled = true
     
     highlights[target] = highlight
-    return highlight
+    
+    -- Distance tracking
+    local conn
+    conn = RunService.Heartbeat:Connect(function()
+        if not target or not target.Parent or not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if conn then conn:Disconnect() end
+            return
+        end
+        
+        local hrp = localPlayer.Character.HumanoidRootPart
+        local targetHrp = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("UpperTorso") or target
+        
+        if targetHrp then
+            local distance = (hrp.Position - targetHrp.Position).Magnitude
+            highlight.Enabled = distance <= MAX_DISTANCE
+        end
+    end)
 end
 
--- Enhanced getRole function
+-- Enhanced role detection
 local function getRole(plr)
     if not plr.Character then return "Innocent" end
     
     -- Check for Murderer (Knife)
-    local function hasKnife(char)
-        return (plr.Backpack and plr.Backpack:FindFirstChild("Knife")) or
-               (char:FindFirstChild("Knife")) or
-               (char:FindFirstChildWhichIsA("Tool") and char:FindFirstChildWhichIsA("Tool"):FindFirstChild("Slash"))
+    local function hasKnife()
+        -- Check backpack
+        if plr.Backpack and plr.Backpack:FindFirstChild("Knife") then
+            return true
+        end
+        -- Check character
+        if plr.Character:FindFirstChild("Knife") then
+            return true
+        end
+        -- Check equipped tools
+        local tool = plr.Character:FindFirstChildWhichIsA("Tool")
+        if tool and tool:FindFirstChild("Slash") then
+            return true
+        end
+        return false
     end
     
     -- Check for Sheriff (Gun)
-    local function hasGun(char)
-        return (plr.Backpack and plr.Backpack:FindFirstChild("Gun")) or
-               (char:FindFirstChild("Gun")) or
-               (char:FindFirstChildWhichIsA("Tool") and char:FindFirstChildWhichIsA("Tool"):FindFirstChild("Shoot"))
+    local function hasGun()
+        -- Check backpack
+        if plr.Backpack and plr.Backpack:FindFirstChild("Gun") then
+            return true
+        end
+        -- Check character
+        if plr.Character:FindFirstChild("Gun") then
+            return true
+        end
+        -- Check equipped tools
+        local tool = plr.Character:FindFirstChildWhichIsA("Tool")
+        if tool and tool:FindFirstChild("Shoot") then
+            return true
+        end
+        return false
     end
     
-    if hasKnife(plr.Character) then return "Murderer" end
-    if hasGun(plr.Character) then return "Sheriff" end
+    if hasKnife() then return "Murderer" end
+    if hasGun() then return "Sheriff" end
     return "Innocent"
 end
 
--- Gun ESP with 2000 stud range
+-- Gun ESP system
 local function updateGunESP()
     -- Clean up old instances
     for _, esp in pairs(gunESPInstances) do
@@ -266,13 +280,12 @@ local function updateGunESP()
                 local highlight = Instance.new("Highlight")
                 highlight.Name = "GunHighlight"
                 highlight.FillColor = Color3.fromRGB(170, 0, 255)
-                highlight.OutlineColor = Color3.new(1, 1, 1)
+                highlight.OutlineColor = Color3.new(1,1,1)
                 highlight.FillTransparency = 0.3
                 highlight.OutlineTransparency = 0
                 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
                 highlight.Adornee = gunDrop
                 highlight.Parent = gunDrop
-                highlight.MaxDistance = MAX_DISTANCE
                 
                 -- Create billboard
                 local billboard = Instance.new("BillboardGui")
@@ -281,7 +294,6 @@ local function updateGunESP()
                 billboard.Size = UDim2.new(5, 0, 1.5, 0)
                 billboard.StudsOffset = Vector3.new(0, 3, 0)
                 billboard.AlwaysOnTop = true
-                billboard.MaxDistance = MAX_DISTANCE
                 billboard.Parent = gunDrop
                 
                 local label = Instance.new("TextLabel")
@@ -292,7 +304,7 @@ local function updateGunESP()
                 label.TextScaled = true
                 label.Font = Enum.Font.GothamBlack
                 label.TextStrokeTransparency = 0
-                label.TextStrokeColor3 = Color3.new(0, 0, 0)
+                label.TextStrokeColor3 = Color3.new(0,0,0)
                 label.Parent = billboard
                 
                 -- Store instances
@@ -300,31 +312,25 @@ local function updateGunESP()
                 table.insert(gunESPInstances, billboard)
                 
                 -- Distance tracking
-                local function updateGunVisibility()
-                    if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                        local hrp = localPlayer.Character.HumanoidRootPart
-                        local distance = (hrp.Position - gunDrop.Position).Magnitude
-                        highlight.Enabled = distance <= MAX_DISTANCE
-                        billboard.Enabled = distance <= MAX_DISTANCE
-                    end
-                end
-                
                 local conn
-                conn = game:GetService("RunService").Heartbeat:Connect(function()
-                    if not gunDrop or not gunDrop:IsDescendantOf(workspace) then
-                        conn:Disconnect()
+                conn = RunService.Heartbeat:Connect(function()
+                    if not gunDrop or not gunDrop.Parent or not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        if conn then conn:Disconnect() end
                         return
                     end
-                    updateGunVisibility()
+                    
+                    local distance = (localPlayer.Character.HumanoidRootPart.Position - gunDrop.Position).Magnitude
+                    highlight.Enabled = distance <= MAX_DISTANCE
+                    billboard.Enabled = distance <= MAX_DISTANCE
                 end)
             end
         end
     end
 end
 
--- Combined ESP update function
+-- Main ESP update function
 local function updateAllESP()
-    -- Player ESP
+    -- Update player ESP
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= localPlayer and plr.Character then
             local role = getRole(plr)
@@ -344,13 +350,13 @@ local function updateAllESP()
         end
     end
     
-    -- Gun ESP
+    -- Update gun ESP
     pcall(updateGunESP)
 end
 
 -- Initialize ESP system
 local function initESP()
-    -- Initial setup
+    -- Initial update
     updateAllESP()
     
     -- Set up event listeners
@@ -363,6 +369,9 @@ local function initESP()
     
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= localPlayer then
+            if plr.Character then
+                updateAllESP()
+            end
             plr.CharacterAdded:Connect(function(char)
                 task.wait(1)
                 updateAllESP()
@@ -370,10 +379,51 @@ local function initESP()
         end
     end
     
-    -- Regular updates
+    -- Weapon tracking
+    local function trackWeapons(plr)
+        if plr == localPlayer then return end
+        
+        if plr.Backpack then
+            plr.Backpack.ChildAdded:Connect(function()
+                task.wait(0.5)
+                updateAllESP()
+            end)
+            plr.Backpack.ChildRemoved:Connect(function()
+                task.wait(0.5)
+                updateAllESP()
+            end)
+        end
+        
+        plr.CharacterAdded:Connect(function(char)
+            if char:WaitForChild("Backpack", 2) then
+                char.Backpack.ChildAdded:Connect(function()
+                    task.wait(0.5)
+                    updateAllESP()
+                end)
+                char.Backpack.ChildRemoved:Connect(function()
+                    task.wait(0.5)
+                    updateAllESP()
+                end)
+            end
+            
+            char.ChildAdded:Connect(function(child)
+                if child:IsA("Tool") then
+                    task.wait(0.1)
+                    updateAllESP()
+                end
+            end)
+        end)
+    end
+    
+    for _, plr in ipairs(Players:GetPlayers()) do
+        trackWeapons(plr)
+    end
+    Players.PlayerAdded:Connect(trackWeapons)
+    
+    -- Main update loop
     while true do
-        updateAllESP()
-        task.wait(2) -- Update every 2 seconds
+        pcall(updateAllESP)
+        task.wait(2)
     end
 end
 
