@@ -198,7 +198,7 @@ local function getRole(plr)
 end
 
 local function updateESP()
-    -- Clear old highlights
+    -- First clean up any invalid highlights
     for target, highlight in pairs(highlights) do
         if not target:IsDescendantOf(game) then
             highlight:Destroy()
@@ -210,15 +210,20 @@ local function updateESP()
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr.Character then
             local role = getRole(plr)
-            local color
+            local color = Color3.fromRGB(0, 255, 0) -- Default innocent color
+            
             if role == "Murderer" then
                 color = Color3.fromRGB(255, 0, 0)
             elseif role == "Sheriff" then
                 color = Color3.fromRGB(0, 0, 255)
-            else
-                color = Color3.fromRGB(0, 255, 0)
             end
-            addESP(plr.Character, color)
+
+            -- Update existing highlight or create new one
+            if highlights[plr.Character] then
+                highlights[plr.Character].FillColor = color
+            else
+                addESP(plr.Character, color)
+            end
         end
     end
 
@@ -227,69 +232,86 @@ local function updateESP()
         local mapFolder = workspace:FindFirstChild(mapName)
         if mapFolder then
             local gunDrop = mapFolder:FindFirstChild("GunDrop")
-            if gunDrop and gunDrop:IsA("BasePart") and not gunDrop:FindFirstChild("GunESP") then
-                -- Create BillboardGui
-                local billboard = Instance.new("BillboardGui")
-                billboard.Name = "GunESP"
-                billboard.Adornee = gunDrop
-                billboard.Size = UDim2.new(0, 100, 0, 40)
-                billboard.StudsOffset = Vector3.new(0, 2.5, 0)
-                billboard.AlwaysOnTop = true
-                billboard.Parent = gunDrop
+            if gunDrop and gunDrop:IsA("BasePart") then
+                if not gunDrop:FindFirstChild("GunESP") then
+                    -- Create BillboardGui
+                    local billboard = Instance.new("BillboardGui")
+                    billboard.Name = "GunESP"
+                    billboard.Adornee = gunDrop
+                    billboard.Size = UDim2.new(0, 100, 0, 40)
+                    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+                    billboard.AlwaysOnTop = true
+                    billboard.Parent = gunDrop
 
-                -- Create TextLabel
-                local label = Instance.new("TextLabel")
-                label.Size = UDim2.new(1, 0, 1, 0)
-                label.BackgroundTransparency = 1
-                label.Text = "🔫 Gun"
-                label.TextColor3 = Color3.fromRGB(170, 0, 255)
-                label.TextScaled = true
-                label.Font = Enum.Font.GothamBold
-                label.Parent = billboard
+                    -- Create TextLabel
+                    local label = Instance.new("TextLabel")
+                    label.Size = UDim2.new(1, 0, 1, 0)
+                    label.BackgroundTransparency = 1
+                    label.Text = "🔫 Gun"
+                    label.TextColor3 = Color3.fromRGB(170, 0, 255)
+                    label.TextScaled = true
+                    label.Font = Enum.Font.GothamBold
+                    label.Parent = billboard
+                end
+            else
+                -- Clean up gun ESP if gun drop no longer exists
+                local existingESP = mapFolder:FindFirstChild("GunESP")
+                if existingESP then
+                    existingESP:Destroy()
+                end
             end
         end
     end
 end
 
-Players.PlayerRemoving:Connect(function(plr)
-    if plr.Character and highlights[plr.Character] then
-        highlights[plr.Character]:Destroy()
-        highlights[plr.Character] = nil
+-- Character added event to handle new players joining
+local function onCharacterAdded(character)
+    task.wait(1) -- Wait for character to fully load
+    if character:IsDescendantOf(workspace) then
+        updateESP()
     end
-end)
+end
 
-grabGunBtn.MouseButton1Click:Connect(function()
-    local hrp = getHRP(localPlayer)
-    if not hrp then return end
-
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Tool") and obj.Name == "GunDrop" and obj:FindFirstChild("Handle") then
-            local originalCFrame = hrp.CFrame
-            local handle = obj.Handle
-
-            -- Teleport to gun
-            hrp.CFrame = handle.CFrame + Vector3.new(0, 3, 0)
-            task.wait(0.1)
-
-            if typeof(firetouchinterest) == "function" then
-                firetouchinterest(handle, hrp, 0)
-                task.wait(0.1)
-                firetouchinterest(handle, hrp, 1)
-            else
-                warn("firetouchinterest is not available.")
-            end
-
-            task.wait(0.1)
-            hrp.CFrame = originalCFrame
-            break
-        end
+-- Connect character added events
+for _, player in ipairs(Players:GetPlayers()) do
+    if player.Character then
+        onCharacterAdded(player.Character)
     end
+    player.CharacterAdded:Connect(onCharacterAdded)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(onCharacterAdded)
 end)
 
 -- Start ESP updates
 task.spawn(function()
     while true do
         pcall(updateESP)
-        task.wait(0.5)
+        task.wait(1) -- Reduced update frequency to 1 second for better performance
     end
+end)
+
+grabGunBtn.MouseButton1Click:Connect(function()
+    -- Find the gun drop in all maps
+    for _, mapName in ipairs(maps) do
+        local mapFolder = workspace:FindFirstChild(mapName)
+        if mapFolder then
+            local gunDrop = mapFolder:FindFirstChild("GunDrop")
+            if gunDrop and gunDrop:IsA("BasePart") then
+                local hrp = getHRP(localPlayer)
+                if not hrp then return end
+                
+                -- Fire TouchInterest events directly
+                firetouchinterest(gunDrop, hrp, 0) -- Touch began
+                task.wait(0.05)
+                firetouchinterest(gunDrop, hrp, 1) -- Touch ended
+                
+                warn("Triggered TouchInterest on gun at "..mapName)
+                return -- Exit after first gun found
+            end
+        end
+    end
+    
+    warn("No GunDrop found in any map")
 end)
