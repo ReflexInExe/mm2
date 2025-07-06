@@ -5,7 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
-local maps = {"Bank2", "Bio Lab", "Factory", "Hospital3", "Hotel2", "House2", "Mansion2", "Mil-Base", "Office3", "Police Station", "Research Facility", "Workplace"}
+local maps = {"Bank2", "BioLab", "Factory", "Hospital3", "Hotel2", "House2", "Mansion2", "MilBase", "Office3", "PoliceStation", "ResearchFacility", "Workplace"}
 
 local highlights = {} -- Player highlights
 local gunESPInstances = {} -- Gun ESP objects
