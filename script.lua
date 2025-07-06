@@ -431,25 +431,55 @@ end
 task.spawn(initESP)
 
 grabGunBtn.MouseButton1Click:Connect(function()
-    -- Find the gun drop in all maps
+    local hrp = getHRP(localPlayer)
+    if not hrp then 
+        warn("HRP not found")
+        return 
+    end
+
+    -- Store original position
+    local originalPosition = hrp.CFrame
+    
+    -- Find the nearest gun drop
+    local closestGun = nil
+    local closestDistance = math.huge
+    
     for _, mapName in ipairs(maps) do
         local mapFolder = workspace:FindFirstChild(mapName)
         if mapFolder then
             local gunDrop = mapFolder:FindFirstChild("GunDrop")
             if gunDrop and gunDrop:IsA("BasePart") then
-                local hrp = getHRP(localPlayer)
-                if not hrp then return end
-                
-                -- Fire TouchInterest events directly
-                firetouchinterest(gunDrop, hrp, 0) -- Touch began
-                task.wait(0.05)
-                firetouchinterest(gunDrop, hrp, 1) -- Touch ended
-                
-                warn("Triggered TouchInterest on gun at "..mapName)
-                return -- Exit after first gun found
+                local distance = (hrp.Position - gunDrop.Position).Magnitude
+                if distance < closestDistance then
+                    closestDistance = distance
+                    closestGun = gunDrop
+                end
             end
         end
     end
+
+    if not closestGun then
+        warn("No GunDrop found in any map")
+        return
+    end
+
+    warn("Found gun at distance: "..closestDistance)
     
-    warn("No GunDrop found in any map")
+    -- Teleport to gun (slightly above it)
+    hrp.CFrame = closestGun.CFrame + Vector3.new(0, 3, 0)
+    task.wait(0.2) -- Wait for teleport to complete
+    
+    -- Fire touch events multiple times for reliability
+    for i = 1, 3 do
+        firetouchinterest(closestGun, hrp, 0) -- Touch began
+        task.wait(0.05)
+        firetouchinterest(closestGun, hrp, 1) -- Touch ended
+        task.wait(0.05)
+    end
+    
+    task.wait(0.2) -- Wait for pickup to register
+    
+    -- Teleport back to original position
+    hrp.CFrame = originalPosition
+    warn("Gun grab attempt completed")
 end)
