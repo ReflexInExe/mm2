@@ -5,7 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
-local maps = {"Bank 2", "Bio Lab", "Factory", "Hospital 3", "Hotel 2", "House 2", "Mansion 2", "Mil-Base", "Office 3", "Police Station", "Research Facility", "Workplace"}
+local maps = {"Bank2", "Bio Lab", "Factory", "Hospital3", "Hotel2", "House2", "Mansion2", "Mil-Base", "Office3", "Police Station", "Research Facility", "Workplace"}
 
 local highlights = {} -- Player highlights
 local gunESPInstances = {} -- Gun ESP objects
@@ -432,54 +432,36 @@ task.spawn(initESP)
 
 grabGunBtn.MouseButton1Click:Connect(function()
     local hrp = getHRP(localPlayer)
-    if not hrp then 
-        warn("HRP not found")
-        return 
+    if not hrp then
+        warn("HumanoidRootPart not found")
+        return
     end
-
-    -- Store original position
-    local originalPosition = hrp.CFrame
     
-    -- Find the nearest gun drop
-    local closestGun = nil
-    local closestDistance = math.huge
+    local foundGun = false
     
+    -- Search all maps for gun drops
     for _, mapName in ipairs(maps) do
         local mapFolder = workspace:FindFirstChild(mapName)
         if mapFolder then
             local gunDrop = mapFolder:FindFirstChild("GunDrop")
             if gunDrop and gunDrop:IsA("BasePart") then
-                local distance = (hrp.Position - gunDrop.Position).Magnitude
-                if distance < closestDistance then
-                    closestDistance = distance
-                    closestGun = gunDrop
+                foundGun = true
+                
+                -- Fire touch events sequence (most reliable order)
+                for i = 1, 5 do  -- Multiple attempts for reliability
+                    firetouchinterest(gunDrop, hrp, 1) -- Touch begin
+                    task.wait(0.05)
+                    firetouchinterest(gunDrop, hrp, 0) -- Touch end
+                    task.wait(0.05)
                 end
+                
+                warn("Triggered TouchInterest on gun in "..mapName)
+                return
             end
         end
     end
-
-    if not closestGun then
+    
+    if not foundGun then
         warn("No GunDrop found in any map")
-        return
     end
-
-    warn("Found gun at distance: "..closestDistance)
-    
-    -- Teleport to gun (slightly above it)
-    hrp.CFrame = closestGun.CFrame + Vector3.new(0, 3, 0)
-    task.wait(0.2) -- Wait for teleport to complete
-    
-    -- Fire touch events multiple times for reliability
-    for i = 1, 3 do
-        firetouchinterest(closestGun, hrp, 0) -- Touch began
-        task.wait(0.05)
-        firetouchinterest(closestGun, hrp, 1) -- Touch ended
-        task.wait(0.05)
-    end
-    
-    task.wait(0.2) -- Wait for pickup to register
-    
-    -- Teleport back to original position
-    hrp.CFrame = originalPosition
-    warn("Gun grab attempt completed")
 end)
