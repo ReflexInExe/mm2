@@ -107,7 +107,7 @@ local function createButton(name, text, yPosition)
 end
 
 local shootBtn = createButton("ShootMurderer", "Shoot Murderer", 60)
-local killAllBtn = createButton("KillAllKnife", "Kill All (Knife)", 110)
+local killAllBtn = createButton("KillAllKnife", "Kill All", 110)
 local grabGunBtn = createButton("GrabGun", "Grab Gun", 160)
 
 -- Toggle Button (≡ small icon)
