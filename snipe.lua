@@ -33,41 +33,36 @@ shootBtn.TextScaled = true
 shootBtn.Parent = gui
 Instance.new("UICorner", shootBtn)
 
--- ESP Function to create BillboardGui above player's head
+-- ESP Function to create highlight around player's hitbox (HumanoidRootPart)
 local function addESP(target)
     if not target or not target.Parent then return end
+    
+    -- Find the HumanoidRootPart or UpperTorso for hitbox
+    local hrp = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("UpperTorso")
+    if not hrp then return end
 
-    -- Remove old BillboardGui if it exists
-    if target:FindFirstChild("ESP_Billboard") then
-        target.ESP_Billboard:Destroy()
+    -- Remove old Highlight if it exists
+    if target:FindFirstChild("ESP_Highlight") then
+        target.ESP_Highlight:Destroy()
     end
 
-    -- Create new BillboardGui for the ESP
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "ESP_Billboard"
-    billboard.Adornee = target:FindFirstChild("Head")  -- Attach to the player's head
-    billboard.Size = UDim2.new(0, 200, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)  -- Position above the head
-    billboard.AlwaysOnTop = true
-    billboard.Parent = target
-
-    -- Create label inside the BillboardGui
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = target.Name
-    label.TextColor3 = Color3.fromRGB(169, 169, 169)  -- Grey text
-    label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-    label.TextStrokeTransparency = 0.5
-    label.TextStrokeColor3 = Color3.new(0, 0, 0)
-    label.Parent = billboard
+    -- Create new Highlight for the hitbox (HumanoidRootPart or UpperTorso)
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.FillColor = Color3.fromRGB(169, 169, 169)  -- Grey color for the hitbox
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Adornee = hrp
+    highlight.Parent = target
+    highlight.Enabled = true
 end
 
 -- Add ESP for all players
 local function updateAllESP()
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
+        if plr ~= localPlayer and plr.Character then
             addESP(plr.Character)
         end
     end
@@ -79,7 +74,7 @@ updateAllESP()
 -- Watch for new players joining the game and add ESP
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function(char)
-        if char:FindFirstChild("Head") then
+        if char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso") then
             addESP(char)
         end
     end)
@@ -111,8 +106,17 @@ end
 
 -- Shoot Button Logic
 shootBtn.MouseButton1Click:Connect(function()
-    local targetName = inputBox.Text
-    local target = Players:FindFirstChild(targetName)
+    local targetName = inputBox.Text:lower()  -- Convert input to lowercase
+    local target = nil
+    
+    -- Search for a player with a matching name (case insensitive)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Name:lower() == targetName then  -- Compare lowercase versions
+            target = plr
+            break
+        end
+    end
+
     if not target then
         warn("Player not found")
         return
