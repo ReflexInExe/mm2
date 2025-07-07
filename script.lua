@@ -19,7 +19,7 @@ local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 gui.Name = "Reflex Hub"
 gui.ResetOnSpawn = false
 
--- Helper: Format seconds to MM:SS
+-- Format function
 local function secondsToMinutes(seconds)
 	if seconds == -1 then return "" end
 	local minutes = math.floor(seconds / 60)
@@ -27,11 +27,11 @@ local function secondsToMinutes(seconds)
 	return string.format("%d:%02d", minutes, remainingSeconds)
 end
 
--- Round Timer GUI
+-- Create Timer Label
 local roundTimerLabel = Instance.new("TextLabel")
 roundTimerLabel.Name = "RoundTimer"
 roundTimerLabel.Size = UDim2.new(0, 160, 0, 40)
-roundTimerLabel.Position = UDim2.new(0.5, -80, 0, 10) -- Center top
+roundTimerLabel.Position = UDim2.new(0.5, -80, 0, 10)
 roundTimerLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 roundTimerLabel.BackgroundTransparency = 0.3
 roundTimerLabel.TextColor3 = Color3.new(1, 1, 1)
@@ -39,10 +39,11 @@ roundTimerLabel.Font = Enum.Font.GothamBold
 roundTimerLabel.TextScaled = true
 roundTimerLabel.Text = ""
 roundTimerLabel.Visible = false
+roundTimerLabel.ZIndex = 2
 roundTimerLabel.Parent = gui
 Instance.new("UICorner", roundTimerLabel)
 
--- Start round timer updater
+-- Timer Update Loop
 task.spawn(function()
 	while true do
 		pcall(function()
@@ -56,6 +57,81 @@ task.spawn(function()
 		end)
 		task.wait(1)
 	end
+end)
+
+-- OPTIONAL: Add a toggle button to show/hide the timer
+local toggleTimerBtn = Instance.new("TextButton")
+toggleTimerBtn.Name = "ToggleTimerButton"
+toggleTimerBtn.Size = UDim2.new(0, 120, 0, 30)
+toggleTimerBtn.Position = UDim2.new(0, 10, 0, 290) -- Change Y to move lower/higher
+toggleTimerBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleTimerBtn.Text = "Toggle Timer"
+toggleTimerBtn.TextScaled = true
+toggleTimerBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleTimerBtn.Font = Enum.Font.GothamBold
+toggleTimerBtn.ZIndex = 2
+toggleTimerBtn.Parent = gui
+Instance.new("UICorner", toggleTimerBtn)
+
+toggleTimerBtn.MouseButton1Click:Connect(function()
+	roundTimerLabel.Visible = not roundTimerLabel.Visible
+end)
+-- Format function
+local function secondsToMinutes(seconds)
+	if seconds == -1 then return "" end
+	local minutes = math.floor(seconds / 60)
+	local remainingSeconds = seconds % 60
+	return string.format("%d:%02d", minutes, remainingSeconds)
+end
+
+-- Create Timer Label
+local roundTimerLabel = Instance.new("TextLabel")
+roundTimerLabel.Name = "RoundTimer"
+roundTimerLabel.Size = UDim2.new(0, 160, 0, 40)
+roundTimerLabel.Position = UDim2.new(0.5, -80, 0, 10)
+roundTimerLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+roundTimerLabel.BackgroundTransparency = 0.3
+roundTimerLabel.TextColor3 = Color3.new(1, 1, 1)
+roundTimerLabel.Font = Enum.Font.GothamBold
+roundTimerLabel.TextScaled = true
+roundTimerLabel.Text = ""
+roundTimerLabel.Visible = false
+roundTimerLabel.ZIndex = 2
+roundTimerLabel.Parent = gui
+Instance.new("UICorner", roundTimerLabel)
+
+-- Timer Update Loop
+task.spawn(function()
+	while true do
+		pcall(function()
+			local timeLeft = ReplicatedStorage.Remotes.Extras.GetTimer:InvokeServer()
+			if timeLeft and timeLeft > -1 then
+				roundTimerLabel.Visible = true
+				roundTimerLabel.Text = secondsToMinutes(timeLeft)
+			else
+				roundTimerLabel.Visible = false
+			end
+		end)
+		task.wait(1)
+	end
+end)
+
+-- OPTIONAL: Add a toggle button to show/hide the timer
+local toggleTimerBtn = Instance.new("TextButton")
+toggleTimerBtn.Name = "ToggleTimerButton"
+toggleTimerBtn.Size = UDim2.new(0, 120, 0, 30)
+toggleTimerBtn.Position = UDim2.new(0, 10, 0, 290) -- Change Y to move lower/higher
+toggleTimerBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+toggleTimerBtn.Text = "Toggle Timer"
+toggleTimerBtn.TextScaled = true
+toggleTimerBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleTimerBtn.Font = Enum.Font.GothamBold
+toggleTimerBtn.ZIndex = 2
+toggleTimerBtn.Parent = gui
+Instance.new("UICorner", toggleTimerBtn)
+
+toggleTimerBtn.MouseButton1Click:Connect(function()
+	roundTimerLabel.Visible = not roundTimerLabel.Visible
 end)
 
 -- Buttons
