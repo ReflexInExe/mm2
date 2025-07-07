@@ -10,7 +10,7 @@ gui.ResetOnSpawn = false
 -- Username TextBox
 local inputBox = Instance.new("TextBox")
 inputBox.Size = UDim2.new(0, 160, 0, 40)
-inputBox.Position = UDim2.new(0, 10, 0, 10)
+inputBox.Position = UDim2.new(1, -170, 0, 10)  -- Positioning to the right
 inputBox.PlaceholderText = "Enter username"
 inputBox.Text = ""
 inputBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -23,7 +23,7 @@ Instance.new("UICorner", inputBox)
 -- Shoot Button
 local shootBtn = Instance.new("TextButton")
 shootBtn.Size = UDim2.new(0, 160, 0, 40)
-shootBtn.Position = UDim2.new(0, 10, 0, 60)
+shootBtn.Position = UDim2.new(1, -170, 0, 60)  -- Positioning to the right
 shootBtn.Text = "Shoot Player"
 shootBtn.BackgroundColor3 = Color3.fromRGB(70, 0, 0)
 shootBtn.TextColor3 = Color3.new(1, 1, 1)
