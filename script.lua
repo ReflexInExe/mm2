@@ -16,7 +16,7 @@ local offsetToPingMult = 1
 
 -- GUI
 local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-gui.Name = "MM2Tools"
+gui.Name = "Reflex Hub"
 gui.ResetOnSpawn = false
 
 local function createButton(name, text, yOffset)
@@ -33,6 +33,31 @@ local function createButton(name, text, yOffset)
     Instance.new("UICorner", btn)
     return btn
 end
+
+-- Timer GUI
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Name = "GameTimer"
+timerLabel.Size = UDim2.new(0, 200, 0, 40)
+timerLabel.Position = UDim2.new(0.5, -100, 0, 10)  -- Top center
+timerLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+timerLabel.TextColor3 = Color3.new(1, 1, 1)
+timerLabel.Font = Enum.Font.GothamBold
+timerLabel.TextScaled = true
+timerLabel.Text = "Time: 00:00"
+timerLabel.Parent = gui
+Instance.new("UICorner", timerLabel)
+
+-- Timer logic
+task.spawn(function()
+    local seconds = 0
+    while true do
+        local mins = math.floor(seconds / 60)
+        local secs = seconds % 60
+        timerLabel.Text = string.format("Time: %02d:%02d", mins, secs)
+        seconds += 1
+        task.wait(1)
+    end
+end)
 
 -- Buttons
 local shootBtn = createButton("ShootMurderer", "Shoot Murderer", 100)
