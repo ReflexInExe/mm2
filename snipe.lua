@@ -33,9 +33,14 @@ shootBtn.TextScaled = true
 shootBtn.Parent = gui
 Instance.new("UICorner", shootBtn)
 
--- ESP Function
+-- ESP Function to Highlight Players
 local function addESP(target)
     if not target or not target.Parent then return end
+    
+    -- Remove old highlight if it exists
+    if target:FindFirstChild("ESP_Highlight") then
+        target.ESP_Highlight:Destroy()
+    end
     
     -- Create a new highlight for the player
     local highlight = Instance.new("Highlight")
