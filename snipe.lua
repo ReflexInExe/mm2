@@ -59,7 +59,7 @@ local function addESP(target)
     highlight.Enabled = true
 end
 
--- Add ESP for all players
+-- Refresh ESP for all players continuously
 local function updateAllESP()
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= localPlayer and plr.Character then
@@ -68,8 +68,10 @@ local function updateAllESP()
     end
 end
 
--- Initialize ESP for players that are already in the game
-updateAllESP()
+-- Update ESP at regular intervals using Heartbeat
+RunService.Heartbeat:Connect(function()
+    updateAllESP()  -- Refresh ESP every frame
+end)
 
 -- Watch for new players joining the game and add ESP
 Players.PlayerAdded:Connect(function(plr)
