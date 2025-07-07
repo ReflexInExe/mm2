@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local localPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 
 -- GUI Setup
 local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
@@ -31,6 +32,42 @@ shootBtn.Font = Enum.Font.GothamBold
 shootBtn.TextScaled = true
 shootBtn.Parent = gui
 Instance.new("UICorner", shootBtn)
+
+-- ESP Function
+local function addESP(target)
+    if not target or not target.Parent then return end
+    
+    -- Create a new highlight for the player
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.FillColor = Color3.fromRGB(169, 169, 169)  -- Grey color
+    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineTransparency = 0
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Adornee = target
+    highlight.Parent = target
+    highlight.Enabled = true
+end
+
+-- Add ESP for all players
+local function updateAllESP()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= localPlayer and plr.Character then
+            addESP(plr.Character)
+        end
+    end
+end
+
+-- Initialize ESP for players that are already in the game
+updateAllESP()
+
+-- Watch for new players joining the game and add ESP
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function(char)
+        addESP(char)
+    end)
+end)
 
 -- Helper Functions
 local function getHRP(plr)
