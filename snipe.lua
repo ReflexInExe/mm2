@@ -33,32 +33,41 @@ shootBtn.TextScaled = true
 shootBtn.Parent = gui
 Instance.new("UICorner", shootBtn)
 
--- ESP Function to Highlight Players
+-- ESP Function to create BillboardGui above player's head
 local function addESP(target)
     if not target or not target.Parent then return end
-    
-    -- Remove old highlight if it exists
-    if target:FindFirstChild("ESP_Highlight") then
-        target.ESP_Highlight:Destroy()
+
+    -- Remove old BillboardGui if it exists
+    if target:FindFirstChild("ESP_Billboard") then
+        target.ESP_Billboard:Destroy()
     end
-    
-    -- Create a new highlight for the player
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "ESP_Highlight"
-    highlight.FillColor = Color3.fromRGB(169, 169, 169)  -- Grey color
-    highlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-    highlight.FillTransparency = 0.5
-    highlight.OutlineTransparency = 0
-    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-    highlight.Adornee = target
-    highlight.Parent = target
-    highlight.Enabled = true
+
+    -- Create new BillboardGui for the ESP
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "ESP_Billboard"
+    billboard.Adornee = target:FindFirstChild("Head")  -- Attach to the player's head
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)  -- Position above the head
+    billboard.AlwaysOnTop = true
+    billboard.Parent = target
+
+    -- Create label inside the BillboardGui
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = target.Name
+    label.TextColor3 = Color3.fromRGB(169, 169, 169)  -- Grey text
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    label.TextStrokeTransparency = 0.5
+    label.TextStrokeColor3 = Color3.new(0, 0, 0)
+    label.Parent = billboard
 end
 
 -- Add ESP for all players
 local function updateAllESP()
     for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= localPlayer and plr.Character then
+        if plr ~= localPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
             addESP(plr.Character)
         end
     end
@@ -70,11 +79,13 @@ updateAllESP()
 -- Watch for new players joining the game and add ESP
 Players.PlayerAdded:Connect(function(plr)
     plr.CharacterAdded:Connect(function(char)
-        addESP(char)
+        if char:FindFirstChild("Head") then
+            addESP(char)
+        end
     end)
 end)
 
--- Helper Functions
+-- Helper Functions for shooting
 local function getHRP(plr)
     return plr.Character and (plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("UpperTorso"))
 end
