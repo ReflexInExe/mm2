@@ -61,9 +61,28 @@ end)
 
 -- OPTIONAL: Add a toggle button to show/hide the timer
 -- Format function
+local function secondsToMinutes(seconds)
+	if seconds == -1 then return "" end
+	local minutes = math.floor(seconds / 60)
+	local remainingSeconds = seconds % 60
+	return string.format("%d:%02d", minutes, remainingSeconds)
+end
 
 -- Create Timer Label
 
+-- Timer Update Loop
+task.spawn(function()
+	while true do
+		pcall(function()
+			local timeLeft = ReplicatedStorage.Remotes.Extras.GetTimer:InvokeServer()
+			if timeLeft and timeLeft > -1 then
+				roundTimerLabel.Visible = true
+				roundTimerLabel.Text = secondsToMinutes(timeLeft)
+			else
+				roundTimerLabel.Visible = false
+			end
+		end)
+		task.wait(1)
 	end
 end)
 
