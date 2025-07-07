@@ -19,20 +19,26 @@ local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 gui.Name = "Reflex Hub"
 gui.ResetOnSpawn = false
 
-local function createButton(name, text, yOffset)
-    local btn = Instance.new("TextButton")
-    btn.Name = name
-    btn.Size = UDim2.new(0, 150, 0, 40)
-    btn.Position = UDim2.new(1, -170, 0, yOffset)
-    btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    btn.TextColor3 = Color3.new(1, 1, 1)
-    btn.Font = Enum.Font.GothamBold
-    btn.TextScaled = true
-    btn.Text = text
-    btn.Parent = gui
-    Instance.new("UICorner", btn)
-    return btn
+local function secondsToMinutes(seconds)
+	if seconds == -1 then return "" end
+	local minutes = math.floor(seconds / 60)
+	local remainingSeconds = seconds % 60
+	return string.format("%d:%02d", minutes, remainingSeconds)
 end
+
+-- Round Timer GUI
+local roundTimerLabel = Instance.new("TextLabel")
+roundTimerLabel.Name = "RoundTimer"
+roundTimerLabel.Size = UDim2.new(0, 160, 0, 40)
+roundTimerLabel.Position = UDim2.new(0.5, -80, 0, 10) -- Center top
+roundTimerLabel.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+roundTimerLabel.BackgroundTransparency = 0.3
+roundTimerLabel.TextColor3 = Color3.new(1, 1, 1)
+roundTimerLabel.Font = Enum.Font.GothamBold
+roundTimerLabel.TextScaled = true
+roundTimerLabel.Text = ""
+roundTimerLabel.Parent = gui
+Instance.new("UICorner", roundTimerLabel)
 
 -- Timer GUI
 local timerLabel = Instance.new("TextLabel")
@@ -489,4 +495,16 @@ grabGunBtn.MouseButton1Click:Connect(function()
     if not foundGun then
         warn("No GunDrop found in any map")
     end
+end)
+
+-- Start round timer updater
+task.spawn(function()
+	while true do
+		pcall(function()
+			local timeLeft = ReplicatedStorage.Remotes.Extras.GetTimer:InvokeServer()
+			roundTimerLabel.Text = secondsToMinutes(timeLeft)
+			roundTimerLabel.Visible = timeLeft and timeLeft > -1
+		end)
+		task.wait(1)
+	end
 end)
