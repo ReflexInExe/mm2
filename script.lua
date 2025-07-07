@@ -19,6 +19,7 @@ local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 gui.Name = "Reflex Hub"
 gui.ResetOnSpawn = false
 
+-- Helper: Format seconds to MM:SS
 local function secondsToMinutes(seconds)
 	if seconds == -1 then return "" end
 	local minutes = math.floor(seconds / 60)
@@ -37,32 +38,24 @@ roundTimerLabel.TextColor3 = Color3.new(1, 1, 1)
 roundTimerLabel.Font = Enum.Font.GothamBold
 roundTimerLabel.TextScaled = true
 roundTimerLabel.Text = ""
+roundTimerLabel.Visible = false
 roundTimerLabel.Parent = gui
 Instance.new("UICorner", roundTimerLabel)
 
--- Timer GUI
-local timerLabel = Instance.new("TextLabel")
-timerLabel.Name = "GameTimer"
-timerLabel.Size = UDim2.new(0, 200, 0, 40)
-timerLabel.Position = UDim2.new(0.5, -100, 0, 10)  -- Top center
-timerLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-timerLabel.TextColor3 = Color3.new(1, 1, 1)
-timerLabel.Font = Enum.Font.GothamBold
-timerLabel.TextScaled = true
-timerLabel.Text = "Time: 00:00"
-timerLabel.Parent = gui
-Instance.new("UICorner", timerLabel)
-
--- Timer logic
+-- Start round timer updater
 task.spawn(function()
-    local seconds = 0
-    while true do
-        local mins = math.floor(seconds / 60)
-        local secs = seconds % 60
-        timerLabel.Text = string.format("Time: %02d:%02d", mins, secs)
-        seconds += 1
-        task.wait(1)
-    end
+	while true do
+		pcall(function()
+			local timeLeft = ReplicatedStorage.Remotes.Extras.GetTimer:InvokeServer()
+			if timeLeft and timeLeft > -1 then
+				roundTimerLabel.Visible = true
+				roundTimerLabel.Text = secondsToMinutes(timeLeft)
+			else
+				roundTimerLabel.Visible = false
+			end
+		end)
+		task.wait(1)
+	end
 end)
 
 -- Buttons
@@ -495,16 +488,4 @@ grabGunBtn.MouseButton1Click:Connect(function()
     if not foundGun then
         warn("No GunDrop found in any map")
     end
-end)
-
--- Start round timer updater
-task.spawn(function()
-	while true do
-		pcall(function()
-			local timeLeft = ReplicatedStorage.Remotes.Extras.GetTimer:InvokeServer()
-			roundTimerLabel.Text = secondsToMinutes(timeLeft)
-			roundTimerLabel.Visible = timeLeft and timeLeft > -1
-		end)
-		task.wait(1)
-	end
 end)
