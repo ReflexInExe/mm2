@@ -95,7 +95,7 @@ local function createButton(name, text, yPosition)
     local button = Instance.new("TextButton")
     button.Name = name
     button.Size = UDim2.new(0, 160, 0, 40)
-    button.Position = UDim2.new(0, 10, 0, yPosition)
+    button.Position = UDim2.new(1, -170, 0, yPosition)
     button.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     button.TextColor3 = Color3.new(1, 1, 1)
     button.Font = Enum.Font.GothamBold
@@ -106,9 +106,9 @@ local function createButton(name, text, yPosition)
     return button
 end
 
-local shootBtn = createButton("ShootMurderer", "Shoot Murderer", 100)
-local killAllBtn = createButton("KillAllKnife", "Kill All (Knife)", 150)
-local grabGunBtn = createButton("GrabGun", "Grab Gun", 200)
+local shootBtn = createButton("ShootMurderer", "Shoot Murderer", 60)
+local killAllBtn = createButton("KillAllKnife", "Kill All (Knife)", 110)
+local grabGunBtn = createButton("GrabGun", "Grab Gun", 160)
 
 -- Toggle Button (≡ small icon)
 local toggleBtn = Instance.new("TextButton")
