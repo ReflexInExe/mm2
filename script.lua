@@ -1,5 +1,3 @@
--- MM2 Tools: Shoot Murderer, Kill All (Knife), Grab Gun + Toggle Visibility
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -7,19 +5,17 @@ local localPlayer = Players.LocalPlayer
 local workspace = game:GetService("Workspace")
 local maps = {"Bank2", "BioLab", "Factory", "Hospital3", "Hotel", "House2", "Mansion2", "MilBase", "Office3", "PoliceStation", "ResearchFacility", "Workplace"}
 
-local highlights = {} -- Player highlights
-local gunESPInstances = {} -- Gun ESP objects
+local highlights = {} 
+local gunESPInstances = {} 
 local MAX_DISTANCE = 2000
 
 local shootOffset = 2.8
 local offsetToPingMult = 1
 
--- GUI
 local gui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 gui.Name = "Reflex Hub"
 gui.ResetOnSpawn = false
 
--- Format function
 local function secondsToMinutes(seconds)
 	if seconds == -1 then return "" end
 	local minutes = math.floor(seconds / 60)
@@ -27,7 +23,6 @@ local function secondsToMinutes(seconds)
 	return string.format("%d:%02d", minutes, remainingSeconds)
 end
 
--- Create Timer Label
 local roundTimerLabel = Instance.new("TextLabel")
 roundTimerLabel.Name = "RoundTimer"
 roundTimerLabel.Size = UDim2.new(0, 160, 0, 40)
@@ -43,7 +38,6 @@ roundTimerLabel.ZIndex = 2
 roundTimerLabel.Parent = gui
 Instance.new("UICorner", roundTimerLabel)
 
--- Timer Update Loop
 task.spawn(function()
 	while true do
 		pcall(function()
@@ -59,8 +53,6 @@ task.spawn(function()
 	end
 end)
 
--- OPTIONAL: Add a toggle button to show/hide the timer
--- Format function
 local function secondsToMinutes(seconds)
 	if seconds == -1 then return "" end
 	local minutes = math.floor(seconds / 60)
@@ -68,9 +60,6 @@ local function secondsToMinutes(seconds)
 	return string.format("%d:%02d", minutes, remainingSeconds)
 end
 
--- Create Timer Label
-
--- Timer Update Loop
 task.spawn(function()
 	while true do
 		pcall(function()
@@ -86,11 +75,6 @@ task.spawn(function()
 	end
 end)
 
--- OPTIONAL: Add a toggle button to show/hide the timer
-
--- Buttons
-
--- Helper to create a button
 local function createButton(name, text, yPosition)
     local button = Instance.new("TextButton")
     button.Name = name
@@ -110,7 +94,6 @@ local shootBtn = createButton("ShootMurderer", "Shoot Murderer", 60)
 local killAllBtn = createButton("KillAllKnife", "Kill All", 110)
 local grabGunBtn = createButton("GrabGun", "Grab Gun", 160)
 
--- Toggle Button (≡ small icon)
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Name = "ToggleVisibility"
 toggleBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -123,7 +106,6 @@ toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.Parent = gui
 Instance.new("UICorner", toggleBtn)
 
--- Toggle Visibility Logic
 local buttonsVisible = true
 toggleBtn.MouseButton1Click:Connect(function()
     buttonsVisible = not buttonsVisible
@@ -132,7 +114,6 @@ toggleBtn.MouseButton1Click:Connect(function()
     grabGunBtn.Visible = buttonsVisible
 end)
 
--- Helper Functions
 local function getHRP(plr)
     return plr.Character and (plr.Character:FindFirstChild("HumanoidRootPart") or plr.Character:FindFirstChild("UpperTorso"))
 end
@@ -161,7 +142,6 @@ local function getPredictedPosition(target)
     return predicted
 end
 
--- 🔫 Shoot Murderer Logic
 shootBtn.MouseButton1Click:Connect(function()
     local hasGun = localPlayer.Backpack:FindFirstChild("Gun") or (localPlayer.Character and localPlayer.Character:FindFirstChild("Gun"))
     if not hasGun then
@@ -197,7 +177,6 @@ shootBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 🔪 Kill All With Knife (YARHM Logic)
 killAllBtn.MouseButton1Click:Connect(function()
     local knifeTool = localPlayer.Backpack:FindFirstChild("Knife") or (localPlayer.Character and localPlayer.Character:FindFirstChild("Knife"))
     if not knifeTool then
@@ -205,7 +184,6 @@ killAllBtn.MouseButton1Click:Connect(function()
         return
     end
 
-    -- Equip Knife
     if localPlayer.Backpack:FindFirstChild("Knife") then
         local hum = getHumanoid(localPlayer)
         if hum then hum:EquipTool(localPlayer.Backpack:FindFirstChild("Knife")) end
@@ -217,7 +195,6 @@ killAllBtn.MouseButton1Click:Connect(function()
         return
     end
 
-    -- Anchor and teleport players in front of you
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= localPlayer and player.Character and getHRP(player) and getHumanoid(player) and getHumanoid(player).Health > 0 then
             local hrp = getHRP(player)
@@ -229,11 +206,9 @@ killAllBtn.MouseButton1Click:Connect(function()
         end
     end
 
-    -- Fire Stab Remote
     local args = { [1] = "Slash" }
     knife.Stab:FireServer(unpack(args))
-    
-    -- Unanchor players after stabbing
+
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= localPlayer and player.Character and getHRP(player) then
             local hrp = getHRP(player)
@@ -244,17 +219,14 @@ killAllBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Improved addESP function with proper parenting
 local function addESP(target, color)
     if not target or not target.Parent then return end
     
-    -- Remove old highlight if exists
     if highlights[target] then
         highlights[target]:Destroy()
         highlights[target] = nil
     end
     
-    -- Create new highlight
     local highlight = Instance.new("Highlight")
     highlight.Name = "ESP_Highlight"
     highlight.FillColor = color
@@ -268,7 +240,6 @@ local function addESP(target, color)
     
     highlights[target] = highlight
     
-    -- Distance tracking
     local conn
     conn = RunService.Heartbeat:Connect(function()
         if not target or not target.Parent or not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -286,21 +257,16 @@ local function addESP(target, color)
     end)
 end
 
--- Enhanced role detection
 local function getRole(plr)
     if not plr.Character then return "Innocent" end
     
-    -- Check for Murderer (Knife)
     local function hasKnife()
-        -- Check backpack
         if plr.Backpack and plr.Backpack:FindFirstChild("Knife") then
             return true
         end
-        -- Check character
         if plr.Character:FindFirstChild("Knife") then
             return true
         end
-        -- Check equipped tools
         local tool = plr.Character:FindFirstChildWhichIsA("Tool")
         if tool and tool:FindFirstChild("Slash") then
             return true
@@ -308,17 +274,13 @@ local function getRole(plr)
         return false
     end
     
-    -- Check for Sheriff (Gun)
     local function hasGun()
-        -- Check backpack
         if plr.Backpack and plr.Backpack:FindFirstChild("Gun") then
             return true
         end
-        -- Check character
         if plr.Character:FindFirstChild("Gun") then
             return true
         end
-        -- Check equipped tools
         local tool = plr.Character:FindFirstChildWhichIsA("Tool")
         if tool and tool:FindFirstChild("Shoot") then
             return true
@@ -331,9 +293,7 @@ local function getRole(plr)
     return "Innocent"
 end
 
--- Gun ESP system
 local function updateGunESP()
-    -- Clean up old instances
     for _, esp in pairs(gunESPInstances) do
         if esp and esp.Parent then
             esp:Destroy()
@@ -341,13 +301,11 @@ local function updateGunESP()
     end
     gunESPInstances = {}
     
-    -- Search all maps
     for _, mapName in ipairs(maps) do
         local mapFolder = workspace:FindFirstChild(mapName)
         if mapFolder then
             local gunDrop = mapFolder:FindFirstChild("GunDrop")
             if gunDrop and gunDrop:IsA("BasePart") then
-                -- Create highlight
                 local highlight = Instance.new("Highlight")
                 highlight.Name = "GunHighlight"
                 highlight.FillColor = Color3.fromRGB(170, 0, 255)
@@ -358,7 +316,6 @@ local function updateGunESP()
                 highlight.Adornee = gunDrop
                 highlight.Parent = gunDrop
                 
-                -- Create billboard
                 local billboard = Instance.new("BillboardGui")
                 billboard.Name = "GunESP"
                 billboard.Adornee = gunDrop
@@ -378,11 +335,9 @@ local function updateGunESP()
                 label.TextStrokeColor3 = Color3.new(0,0,0)
                 label.Parent = billboard
                 
-                -- Store instances
                 table.insert(gunESPInstances, highlight)
                 table.insert(gunESPInstances, billboard)
                 
-                -- Distance tracking
                 local conn
                 conn = RunService.Heartbeat:Connect(function()
                     if not gunDrop or not gunDrop.Parent or not localPlayer.Character or not localPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -399,13 +354,11 @@ local function updateGunESP()
     end
 end
 
--- Main ESP update function
 local function updateAllESP()
-    -- Update player ESP
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= localPlayer and plr.Character then
             local role = getRole(plr)
-            local color = Color3.fromRGB(0, 255, 0) -- Innocent
+            local color = Color3.fromRGB(0, 255, 0) 
             
             if role == "Murderer" then
                 color = Color3.fromRGB(255, 0, 0)
@@ -420,20 +373,16 @@ local function updateAllESP()
             end
         end
     end
-    
-    -- Update gun ESP
+
     pcall(updateGunESP)
 end
 
--- Initialize ESP system
 local function initESP()
-    -- Initial update
     updateAllESP()
     
-    -- Set up event listeners
     Players.PlayerAdded:Connect(function(plr)
         plr.CharacterAdded:Connect(function(char)
-            task.wait(1) -- Wait for character to load
+            task.wait(1) 
             updateAllESP()
         end)
     end)
@@ -450,7 +399,6 @@ local function initESP()
         end
     end
     
-    -- Weapon tracking
     local function trackWeapons(plr)
         if plr == localPlayer then return end
         
@@ -490,15 +438,13 @@ local function initESP()
         trackWeapons(plr)
     end
     Players.PlayerAdded:Connect(trackWeapons)
-    
-    -- Main update loop
+
     while true do
         pcall(updateAllESP)
         task.wait(2)
     end
 end
 
--- Start the ESP system
 task.spawn(initESP)
 
 grabGunBtn.MouseButton1Click:Connect(function()
@@ -510,7 +456,6 @@ grabGunBtn.MouseButton1Click:Connect(function()
     
     local foundGun = false
     
-    -- Search all maps for gun drops
     for _, mapName in ipairs(maps) do
         local mapFolder = workspace:FindFirstChild(mapName)
         if mapFolder then
@@ -518,11 +463,10 @@ grabGunBtn.MouseButton1Click:Connect(function()
             if gunDrop and gunDrop:IsA("BasePart") then
                 foundGun = true
                 
-                -- Fire touch events sequence (most reliable order)
-                for i = 1, 5 do  -- Multiple attempts for reliability
-                    firetouchinterest(gunDrop, hrp, 1) -- Touch begin
+                for i = 1, 5 do  
+                    firetouchinterest(gunDrop, hrp, 1) 
                     task.wait(0.05)
-                    firetouchinterest(gunDrop, hrp, 0) -- Touch end
+                    firetouchinterest(gunDrop, hrp, 0) 
                     task.wait(0.05)
                 end
                 
